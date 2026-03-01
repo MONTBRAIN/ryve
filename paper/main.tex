@@ -5,8 +5,6 @@
 \usepackage{amsmath,amssymb}
 \usepackage{graphicx}
 \usepackage{booktabs}
-\usepackage{algorithm}
-\usepackage{algpseudocode}
 \usepackage{url}
 \usepackage{hyperref}
 \usepackage{xcolor}
@@ -311,7 +309,11 @@ The system is implemented in Python with zero external dependencies for the core
 
 \textbf{Integration.} The cache is exposed to LLMs via the Model Context Protocol (MCP)~\cite{mcp2024}, which provides an \texttt{element\_hint} parameter on all mouse action tools (\texttt{click}, \texttt{double\_click}, \texttt{right\_click}, \texttt{move\_mouse}). The engine transparently performs cache resolution, lookup, and recording around each action.
 
-\textbf{Scale.} The implementation comprises approximately 460 lines for the cache module, 100 lines for engine integration, and 200 lines for motor adaptation in the platform executor. A test suite of 154 unit tests covers cache CRUD operations, spatial proximity, temporal decay, power law adaptation, sequence tracking, persistence, eviction, three-layer resolution, passthrough app exclusion, and percentage-bucket alignment.
+\textbf{Navigation acceleration.} Beyond individual click speed-up, the system provides two higher-level navigation mechanisms. \emph{Navigate-to} performs BFS path-finding through the sequence graph and executes the discovered path via cached positions, skipping the LLM entirely (${\sim}55$\,ms same-app, poll-until-change for cross-app transitions). \emph{Action templates} are named multi-step workflows (click, type, key-press, wait) stored in the database and replayed without any LLM roundtrips. A 5-step template that would require ${\sim}10{-}20$\,s of LLM processing completes in under 1\,s.
+
+\textbf{Resolution resilience.} Cache entries track both window dimensions and screen resolution at recording time. When the screen resolution changes (e.g., switching monitors or DPI settings), cached coordinates are proportionally rescaled. When only the window is resized, entries are used as-is if coordinates remain in bounds, or treated as misses otherwise---avoiding the distortion that proportional rescaling causes on fixed-grid UIs.
+
+\textbf{Scale.} The implementation comprises approximately 1{,}100 lines for the cache module (including navigation, resolution resilience, and action templates), 820 lines for the engine facade, and 500 lines for MCP server integration. A test suite of 294 unit tests covers cache CRUD, spatial proximity, temporal decay, power law adaptation, sequence tracking, persistence, eviction, three-layer resolution, passthrough exclusion, percentage-bucket alignment, navigation path-finding, resolution rescaling, DPI-aware accessibility, and action template workflows.
 
 % ============================================================
 % VI. EVALUATION
